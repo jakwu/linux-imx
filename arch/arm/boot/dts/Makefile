@@ -120,7 +120,7 @@ dtb-$(CONFIG_ARCH_MXC) += \
 	imx6dl-sabresd.dtb \
 	imx6dl-sabresd-hdcp.dtb \
 	imx6dl-sabresd-ldo.dtb \
-	imx6dl-sabresd-pf200.dtb \
+	imx6solo_RIoTboard.dtb \
 	imx6dl-wandboard.dtb \
 	imx6q-arm2.dtb \
 	imx6q-sabreauto.dtb \
@@ -128,6 +128,7 @@ dtb-$(CONFIG_ARCH_MXC) += \
 	imx6q-sabreauto-flexcan1.dtb \
 	imx6q-sabreauto-gpmi-weim.dtb \
 	imx6q-sabrelite.dtb \
+	imx6q-sbc9000.dtb \
 	imx6q-sabresd.dtb \
 	imx6q-sabresd-hdcp.dtb \
 	imx6q-sabresd-ldo.dtb \

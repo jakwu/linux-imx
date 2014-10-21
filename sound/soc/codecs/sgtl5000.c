@@ -759,6 +759,9 @@ static int ldo_regulator_enable(struct regulator_dev *dev)
 				SGTL5000_LINREG_VDDD_MASK, reg);
 
 	snd_soc_update_bits(codec, SGTL5000_CHIP_ANA_POWER,
+				SGTL5000_LINREG_SIMPLE_POWERUP, 0);
+
+	snd_soc_update_bits(codec, SGTL5000_CHIP_ANA_POWER,
 				SGTL5000_LINEREG_D_POWERUP,
 				SGTL5000_LINEREG_D_POWERUP);
 
@@ -1344,7 +1347,8 @@ static int sgtl5000_probe(struct snd_soc_codec *codec)
 			SGTL5000_HP_ZCD_EN |
 			SGTL5000_ADC_ZCD_EN);
 
-	snd_soc_write(codec, SGTL5000_CHIP_MIC_CTRL, 2);
+	snd_soc_write(codec, SGTL5000_CHIP_MIC_CTRL, 0x001);
+	snd_soc_write(codec, SGTL5000_CHIP_ANA_HP_CTRL, 0x0000);
 
 	/*
 	 * disable DAP

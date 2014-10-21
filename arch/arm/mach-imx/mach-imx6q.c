@@ -45,6 +45,7 @@
 static struct flexcan_platform_data flexcan_pdata[2];
 static int flexcan_en_gpio;
 static int flexcan_stby_gpio;
+static int ldb_en_gpio;
 static int flexcan0_en;
 static int flexcan1_en;
 static void mx6q_flexcan_switch(void)
@@ -175,6 +176,7 @@ static int ar8031_phy_fixup(struct phy_device *dev)
 }
 
 #define PHY_ID_AR8031	0x004dd074
+#define PHY_ID_AR8035   0x004dd072
 
 static void __init imx6q_enet_phy_init(void)
 {
@@ -184,6 +186,8 @@ static void __init imx6q_enet_phy_init(void)
 		phy_register_fixup_for_uid(PHY_ID_KSZ9031, MICREL_PHY_ID_MASK,
 				ksz9031rn_phy_fixup);
 		phy_register_fixup_for_uid(PHY_ID_AR8031, 0xffffffff,
+				ar8031_phy_fixup);
+		phy_register_fixup_for_uid(PHY_ID_AR8035, 0xffffffff,
 				ar8031_phy_fixup);
 	}
 }
@@ -420,6 +424,24 @@ static void __init imx6q_audio_lvds2_init(void)
 	clk_set_rate(esai, ESAI_AUDIO_MCLK);
 }
 
+static int __init ldb_init(void)
+{
+	struct device_node *np;
+
+	np = of_find_node_by_path("/soc/aips-bus@02000000/ldb@020e0008");
+	if (!np)
+		return -ENODEV;
+
+    ldb_en_gpio = of_get_named_gpio(np, "ldb-en-gpio", 0);
+	if (gpio_is_valid(ldb_en_gpio) && 
+		!gpio_request_one(ldb_en_gpio, GPIOF_DIR_OUT, "ldb-pwr-en")) {
+		gpio_set_value_cansleep(ldb_en_gpio, 1);	
+	}
+
+	return 0;
+
+}
+
 static struct platform_device imx6q_cpufreq_pdev = {
 	.name = "imx6-cpufreq",
 };
@@ -456,6 +478,10 @@ static void __init imx6q_init_late(void)
 		|| of_machine_is_compatible("fsl,imx6dl-sabreauto")) {
 		imx6q_flexcan_fixup_auto();
 		imx6q_audio_lvds2_init();
+	}
+
+	if (of_machine_is_compatible("fsl,imx6solo_RIoTboard")) {
+		ldb_init();
 	}
 }
 
