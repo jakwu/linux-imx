@@ -1108,6 +1108,18 @@
 	};
 
 	ecspi2 {
+		pinctrl_ecspi2_cs_1: ecspi2_cs_grp-1 {
+			fsl,pins = <
+				MX6QDL_PAD_EIM_D29__GPIO3_IO29 0x80000000
+			>;
+		};
+
+		pinctrl_ecspi2_cs_2: ecspi2_cs_grp-2 {
+			fsl,pins = <
+				MX6QDL_PAD_EIM_LBA__GPIO2_IO27 0x80000000
+			>;
+		};
+
 		pinctrl_ecspi2_1: ecspi2grp-1 {
 			fsl,pins = <
 				MX6QDL_PAD_EIM_OE__ECSPI2_MISO 0x100b1
@@ -1521,6 +1533,12 @@
 		pinctrl_pwm4_1: pwm4grp-1 {
 			fsl,pins = <
 				MX6QDL_PAD_SD1_CMD__PWM4_OUT 0x1b0b1
+			>;
+		};
+
+		pinctrl_pwm4_2: pwm4grp-2 {
+			fsl,pins = <
+				MX6QDL_PAD_SD4_DAT2__PWM4_OUT 0x1b0b1
 			>;
 		};
     };
