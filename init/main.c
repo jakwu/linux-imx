@@ -873,6 +873,7 @@ static int __ref kernel_init(void *unused)
 			execute_command, ret);
 	}
 	if (!try_to_run_init_process("/sbin/init") ||
+	    !try_to_run_init_process("/init")      ||	/* Android */
 	    !try_to_run_init_process("/etc/init") ||
 	    !try_to_run_init_process("/bin/init") ||
 	    !try_to_run_init_process("/bin/sh"))

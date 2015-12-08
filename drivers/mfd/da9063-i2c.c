@@ -66,6 +66,12 @@ static const struct regmap_range da9063_writeable_ranges[] = {
 	}, {
 		.range_min = DA9063_REG_GP_ID_0,
 		.range_max = DA9063_REG_GP_ID_19,
+	}, {
+		.range_min = DA9063_REG_GPIO_8_9,
+		.range_max = DA9063_REG_GPIO_8_9,
+	}, {
+		.range_min = DA9063_REG_CONTROL_A,
+		.range_max = DA9063_REG_CONTROL_A,
 	},
 };
 
@@ -129,6 +135,61 @@ static struct regmap_config da9063_regmap_config = {
 	.volatile_table = &da9063_volatile_table,
 };
 
+#if defined(CONFIG_OF)
+static int da9063_i2c_parse_dt(struct i2c_client *client, struct da9063 *da9063)
+{
+	struct device_node *np = client->dev.of_node;
+	const void *prop;
+	int sz;
+
+	prop = of_get_property(np, "off-sequence", &sz);
+	if (prop) {
+		da9063->off_seq.seq = kzalloc(sz, GFP_KERNEL);
+		if (!da9063->off_seq.seq)
+			return -ENOMEM;
+
+		memcpy(da9063->off_seq.seq, prop, sz);
+		da9063->off_seq.size = sz;
+	}
+	else {
+		da9063->off_seq.size = 0;
+	}
+
+	prop = of_get_property(np, "sleep-sequence", &sz);
+	if (prop) {
+		da9063->sleep_seq.seq = kzalloc(sz, GFP_KERNEL);
+		if (!da9063->sleep_seq.seq)
+			return -ENOMEM;
+
+		memcpy(da9063->sleep_seq.seq, prop, sz);
+		da9063->sleep_seq.size = sz;
+	}
+	else {
+		da9063->sleep_seq.size = 0;
+	}
+
+	prop = of_get_property(np, "wake-sequence", &sz);
+	if (prop) {
+		da9063->wake_seq.seq = kzalloc(sz, GFP_KERNEL);
+		if (!da9063->wake_seq.seq)
+			return -ENOMEM;
+
+		memcpy(da9063->wake_seq.seq, prop, sz);
+		da9063->wake_seq.size = sz;
+	}
+	else {
+		da9063->wake_seq.size = 0;
+	}
+
+	return 0;
+}
+#else /* defined(CONFIG_OF) */
+static int da9063_i2c_parse_dt(struct i2c_client *client, struct da9063 *da9063)
+{
+	return 0;
+}
+#endif /* defined(CONFIG_OF) */
+
 static int da9063_i2c_probe(struct i2c_client *i2c,
 	const struct i2c_device_id *id)
 {
@@ -142,6 +203,12 @@ static int da9063_i2c_probe(struct i2c_client *i2c,
 	i2c_set_clientdata(i2c, da9063);
 	da9063->dev = &i2c->dev;
 	da9063->chip_irq = i2c->irq;
+
+	ret = da9063_i2c_parse_dt(i2c, da9063);
+	if (ret < 0) {
+		dev_err(da9063->dev, "Failed to assume DT settings: %d\n", ret);
+		return ret;
+	}
 
 	da9063->regmap = devm_regmap_init_i2c(i2c, &da9063_regmap_config);
 	if (IS_ERR(da9063->regmap)) {
@@ -163,6 +230,27 @@ static int da9063_i2c_remove(struct i2c_client *i2c)
 	return 0;
 }
 
+static void da9063_i2c_shutdown(struct i2c_client *i2c)
+{
+	struct da9063 *da9063 = i2c_get_clientdata(i2c);
+
+	da9063_device_shutdown(da9063);
+}
+
+static int da9063_i2c_suspend(struct i2c_client *i2c, pm_message_t mesg)
+{
+	struct da9063 *da9063 = i2c_get_clientdata(i2c);
+
+	return da9063_device_suspend(da9063, mesg);
+}
+
+static int da9063_i2c_resume(struct i2c_client *i2c)
+{
+	struct da9063 *da9063 = i2c_get_clientdata(i2c);
+
+	return da9063_device_resume(da9063);
+}
+
 static const struct i2c_device_id da9063_i2c_id[] = {
 	{"da9063", PMIC_DA9063},
 	{},
@@ -176,6 +264,9 @@ static struct i2c_driver da9063_i2c_driver = {
 	},
 	.probe    = da9063_i2c_probe,
 	.remove   = da9063_i2c_remove,
+	.shutdown = da9063_i2c_shutdown,
+	.suspend  = da9063_i2c_suspend,
+	.resume   = da9063_i2c_resume,
 	.id_table = da9063_i2c_id,
 };
 

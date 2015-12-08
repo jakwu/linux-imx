@@ -162,7 +162,7 @@ static struct regmap_irq_chip da9063_irq_chip = {
 	.status_base = DA9063_REG_EVENT_A,
 	.mask_base = DA9063_REG_IRQ_MASK_A,
 	.ack_base = DA9063_REG_EVENT_A,
-	.init_ack_masked = true,
+	/*.init_ack_masked = true,*/
 };
 
 int da9063_irq_init(struct da9063 *da9063)

@@ -60,6 +60,7 @@ static struct resource da9063_rtc_resources[] = {
 
 static struct resource da9063_onkey_resources[] = {
 	{
+		.name	= "ONKEY",
 		.start	= DA9063_IRQ_ONKEY,
 		.end	= DA9063_IRQ_ONKEY,
 		.flags	= IORESOURCE_IRQ,
@@ -75,7 +76,7 @@ static struct resource da9063_hwmon_resources[] = {
 };
 
 
-static const struct mfd_cell da9063_devs[] = {
+static struct mfd_cell da9063_devs[] = {
 	{
 		.name		= DA9063_DRVNAME_REGULATORS,
 		.num_resources	= ARRAY_SIZE(da9063_regulators_resources),
@@ -105,12 +106,15 @@ static const struct mfd_cell da9063_devs[] = {
 	{
 		.name		= DA9063_DRVNAME_VIBRATION,
 	},
+	{
+		.name		= DA9063_DRVNAME_BATTERY,
+	},
 };
 
 int da9063_device_init(struct da9063 *da9063, unsigned int irq)
 {
 	struct da9063_pdata *pdata = da9063->dev->platform_data;
-	int model, revision;
+	int model, variant_id, variant_code;
 	int ret;
 
 	if (pdata) {
@@ -141,23 +145,26 @@ int da9063_device_init(struct da9063 *da9063, unsigned int irq)
 		return -ENODEV;
 	}
 
-	ret = regmap_read(da9063->regmap, DA9063_REG_CHIP_VARIANT, &revision);
+	ret = regmap_read(da9063->regmap, DA9063_REG_CHIP_VARIANT, &variant_id);
 	if (ret < 0) {
-		dev_err(da9063->dev, "Cannot read chip revision id.\n");
+		dev_err(da9063->dev, "Cannot read chip variant id.\n");
 		return -EIO;
 	}
-	revision >>= DA9063_CHIP_VARIANT_SHIFT;
-	if (revision != 3) {
-		dev_err(da9063->dev, "Unknown chip revision: %d\n", revision);
+
+	variant_code = variant_id >> DA9063_CHIP_VARIANT_SHIFT;
+
+	dev_info(da9063->dev,
+		 "Device detected (chip-ID: 0x%02X, var-ID: 0x%02X)\n",
+		 model, variant_id);
+
+	if (variant_code != PMIC_DA9063_BB) {
+		dev_err(da9063->dev, "Unknown chip variant code: 0x%02X\n",
+				variant_code);
 		return -ENODEV;
 	}
 
 	da9063->model = model;
-	da9063->revision = revision;
-
-	dev_info(da9063->dev,
-		 "Device detected (model-ID: 0x%02X  rev-ID: 0x%02X)\n",
-		 model, revision);
+	da9063->variant_code = variant_code;
 
 	ret = da9063_irq_init(da9063);
 	if (ret) {
@@ -178,6 +185,95 @@ void da9063_device_exit(struct da9063 *da9063)
 {
 	mfd_remove_devices(da9063->dev);
 	da9063_irq_exit(da9063);
+}
+
+struct da9063_reg_record {
+	u16 offs;
+	u16 value;
+};
+
+int da9063_device_shutdown(struct da9063 *da9063)
+{
+	int ret = 0;
+	u8 idx, cnt;
+	struct da9063_reg_record *rec;
+	int offs, value;
+
+	if (!da9063->off_seq.size)
+		return 0;
+
+	cnt = da9063->off_seq.size / sizeof(struct da9063_reg_record);
+	rec = da9063->off_seq.seq;
+
+	for (idx=0; idx<cnt; idx++, rec++) {
+
+		offs = be16_to_cpu(rec->offs);
+		value = be16_to_cpu(rec->value);
+
+		ret = regmap_write(da9063->regmap, offs, value);
+		if (ret < 0) {
+			dev_err(da9063->dev, "Cannot set register 0x%04x to 0x%04x.\n",
+					offs, value);
+			return -EIO;
+		}
+	}
+	return ret;
+}
+
+int da9063_device_suspend(struct da9063 *da9063, pm_message_t mesg)
+{
+	int ret = 0;
+	u8 idx, cnt;
+	struct da9063_reg_record *rec;
+	int offs, value;
+
+	if (!da9063->sleep_seq.size)
+		return 0;
+
+	cnt = da9063->sleep_seq.size / sizeof(struct da9063_reg_record);
+	rec = da9063->sleep_seq.seq;
+
+	for (idx=0; idx<cnt; idx++, rec++) {
+
+		offs = be16_to_cpu(rec->offs);
+		value = be16_to_cpu(rec->value);
+
+		ret = regmap_write(da9063->regmap, offs, value);
+		if (ret < 0) {
+			dev_err(da9063->dev, "Cannot set register 0x%04x to 0x%04x.\n",
+					offs, value);
+			return -EIO;
+		}
+	}
+	return ret;
+}
+
+int da9063_device_resume(struct da9063 *da9063)
+{
+	int ret = 0;
+	u8 idx, cnt;
+	struct da9063_reg_record *rec;
+	int offs, value;
+
+	if (!da9063->wake_seq.size)
+		return 0;
+
+	cnt = da9063->wake_seq.size / sizeof(struct da9063_reg_record);
+	rec = da9063->wake_seq.seq;
+
+	for (idx=0; idx<cnt; idx++, rec++) {
+
+		offs = be16_to_cpu(rec->offs);
+		value = be16_to_cpu(rec->value);
+
+		ret = regmap_write(da9063->regmap, offs, value);
+		if (ret < 0) {
+			dev_err(da9063->dev, "Cannot set register 0x%04x to 0x%04x.\n",
+					offs, value);
+			return -EIO;
+		}
+	}
+	return ret;
 }
 
 MODULE_DESCRIPTION("PMIC driver for Dialog DA9063");

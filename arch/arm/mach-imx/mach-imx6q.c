@@ -45,6 +45,8 @@
 #include "cpuidle.h"
 #include "hardware.h"
 
+#include "mach-imx6q-nanoRISC.h"
+
 static struct fec_platform_data fec_pdata;
 static struct flexcan_platform_data flexcan_pdata[2];
 static int flexcan_en_gpio;
@@ -338,11 +340,13 @@ static void __init imx6q_csi_mux_init(void)
 
 	gpr = syscon_regmap_lookup_by_compatible("fsl,imx6q-iomuxc-gpr");
 	if (!IS_ERR(gpr)) {
-		if (of_machine_is_compatible("fsl,imx6q-sabresd") ||
-			of_machine_is_compatible("fsl,imx6q-sabreauto"))
+		if (of_machine_is_compatible("fsl,imx6q-sabresd")
+		|| of_machine_is_compatible("fsl,imx6q-sabreauto")
+		|| of_machine_is_compatible("msc,imx6q-nanoRISC"))
 			regmap_update_bits(gpr, IOMUXC_GPR1, 1 << 19, 1 << 19);
-		else if (of_machine_is_compatible("fsl,imx6dl-sabresd") ||
-			 of_machine_is_compatible("fsl,imx6dl-sabreauto"))
+		else if (of_machine_is_compatible("fsl,imx6dl-sabresd")
+		|| of_machine_is_compatible("fsl,imx6dl-sabreauto")
+		|| of_machine_is_compatible("msc,imx6dl-nanoRISC"))
 			regmap_update_bits(gpr, IOMUXC_GPR13, 0x3F, 0x0C);
 	} else {
 		pr_err("%s(): failed to find fsl,imx6q-iomux-gpr regmap\n",
@@ -552,6 +556,9 @@ put_node:
 
 static struct platform_device imx6q_cpufreq_pdev = {
 	.name = "imx6q-cpufreq",
+	.dev = {
+		.init_name = "imx6q-cpufreq",
+	},
 };
 
 static void __init imx6q_init_late(void)
@@ -573,6 +580,10 @@ static void __init imx6q_init_late(void)
 	if (of_machine_is_compatible("fsl,imx6q-sabreauto")
 		|| of_machine_is_compatible("fsl,imx6dl-sabreauto"))
 		imx6q_flexcan_fixup_auto();
+
+	if (of_machine_is_compatible("msc,imx6dl_nanoRISC")
+		|| of_machine_is_compatible("msc,imx6q_nanoRISC"))
+		imx6qdl_nanoRISC_board_init();
 }
 
 static void __init imx6q_map_io(void)

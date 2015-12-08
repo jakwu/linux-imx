@@ -1,0 +1,94 @@
+/*
+ * Copyright (C) 2014 MSC Technologies, Design Center Aachen
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+/dts-v1/;
+
+#include "msc-nR-imx6-006-002.dtsi"
+/ {
+	mxcfb1: fb@0 {
+		compatible = "fsl,mxc_sdc_fb";
+		disp_dev = "ldb";
+		interface_pix_fmt = "RGB24";
+		mode_str ="LDB-WVGA";
+		default_bpp = <32>;
+		int_clk = <0>;
+		late_init = <0>;
+		status = "disabled";
+	};
+	
+};
+
+&flexcan1 {
+	status="disabled";
+};
+
+&uart1 {
+	status="disabled";
+};
+
+&uart3 {
+	status="disabled";
+};
+
+&iomuxc {
+        pinctrl-names = "default";
+        pinctrl-0 = <&pinctrl_hog_1>;
+
+        hog {
+                pinctrl_hog_1: hoggrp-1 {
+                        fsl,pins = <
+                                MX6QDL_PAD_EIM_A23__GPIO6_IO06     0x30b1
+                                MX6QDL_PAD_EIM_D16__GPIO3_IO16     0x30b1
+                                MX6QDL_PAD_EIM_A17__GPIO2_IO21     0x30b1
+                                MX6QDL_PAD_EIM_A16__GPIO2_IO22     0x30b1
+                                MX6QDL_PAD_EIM_A18__GPIO2_IO20     0x30b1
+                                MX6QDL_PAD_EIM_A19__GPIO2_IO19     0x30b1
+                                MX6QDL_PAD_EIM_A21__GPIO2_IO17     0x30b1
+                                MX6QDL_PAD_EIM_A20__GPIO2_IO18     0x30b1
+                                MX6QDL_PAD_EIM_A21__GPIO2_IO17     0x30b1
+                                MX6QDL_PAD_EIM_A22__GPIO2_IO16     0x30b1
+                                MX6QDL_PAD_EIM_A24__GPIO5_IO04     0x30b1
+                                MX6QDL_PAD_EIM_LBA__GPIO2_IO27     0x30b1
+                                MX6QDL_PAD_EIM_EB3__GPIO2_IO31     0x30b1
+                                MX6QDL_PAD_EIM_A25__GPIO5_IO02     0x30b1
+                                MX6QDL_PAD_GPIO_3__GPIO1_IO03      0x30b1
+                                MX6QDL_PAD_DI0_PIN4__GPIO4_IO20    0x30b1
+                                MX6QDL_PAD_GPIO_7__GPIO1_IO07      0x30b1
+				MX6QDL_PAD_KEY_ROW2__GPIO4_IO11    0x30b1
+				MX6QDL_PAD_KEY_COL2__GPIO4_IO10    0x30b1
+				MX6QDL_PAD_CSI0_DAT13__GPIO5_IO31  0x30b1
+				MX6QDL_PAD_CSI0_DAT14__GPIO6_IO00  0x30b1
+				MX6QDL_PAD_CSI0_DAT15__GPIO6_IO01  0x30b1
+				MX6QDL_PAD_CSI0_DAT16__GPIO6_IO02  0x30b1
+				MX6QDL_PAD_CSI0_DAT17__GPIO6_IO03  0x30b1
+				MX6QDL_PAD_CSI0_DAT18__GPIO6_IO04  0x30b1
+				MX6QDL_PAD_CSI0_DAT19__GPIO6_IO05  0x30b1
+				MX6QDL_PAD_CSI0_DATA_EN__GPIO5_IO20 0x30b1
+				MX6QDL_PAD_GPIO_16__GPIO7_IO11     0x30b1
+				MX6QDL_PAD_CSI0_DAT10__GPIO5_IO28  0x30b1
+				MX6QDL_PAD_CSI0_DAT11__GPIO5_IO29  0x30b1
+				MX6QDL_PAD_EIM_D19__GPIO3_IO19     0x30b1
+				MX6QDL_PAD_EIM_D20__GPIO3_IO20     0x30b1
+				MX6QDL_PAD_EIM_D23__GPIO3_IO23     0x30b1
+				MX6QDL_PAD_EIM_D31__GPIO3_IO31     0x30b1
+   				MX6QDL_PAD_EIM_D25__GPIO3_IO25     0x30b1
+				MX6QDL_PAD_EIM_D24__GPIO3_IO24     0x30b1
+                        >;
+	      };
+	};
+};
+

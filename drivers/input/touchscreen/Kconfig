@@ -86,6 +86,19 @@ config TOUCHSCREEN_AD7879_SPI
 	  To compile this driver as a module, choose M here: the
 	  module will be called ad7879-spi.
 
+config TOUCHSCREEN_ATMEL_MAXTOUCH
+ 	tristate "Atmel maXTouch based touchscreen: I2C Interface"
+ 	depends on I2C
+ 	help
+ 	  Say Y here if you have a touchscreen interface using an
+ 	  Atmel maXTouch controller, and your board-specific initialization
+ 	  code includes that in its table of I2C devices.
+
+ 	  If unsure, say N (but it's safe to say "Y").
+
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called maXTouch.
+
 config TOUCHSCREEN_ATMEL_MXT
 	tristate "Atmel mXT I2C Touchscreen"
 	depends on I2C
@@ -738,6 +751,12 @@ config TOUCHSCREEN_MC13783
 
 	  To compile this driver as a module, choose M here: the
 	  module will be called mc13783_ts.
+
+
+config  TOUCHSCREEN_USB_GE_STAR
+        default y
+        bool "GE-STAR" if EXPERT
+        depends on TOUCHSCREEN_USB_COMPOSITE
 
 config TOUCHSCREEN_USB_EGALAX
 	default y
