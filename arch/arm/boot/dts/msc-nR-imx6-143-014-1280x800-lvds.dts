@@ -25,7 +25,6 @@
 		compatible = "fsl,mxc_sdc_fb";
 		disp_dev = "ldb";
 		interface_pix_fmt = "RGB666";
-		mode_str ="LDB-WXGA";
 		default_bpp = <32>;
 		int_clk = <0>;
 		late_init = <0>;
@@ -34,11 +33,28 @@
 };
 
 &ldb {
-	ipu_id = <0>;
-	disp_id = <1>;
-	ext_ref = <1>;
-	mode = "sin0";
-	sec_ipu_id = <1>;
-	sec_disp_id = <1>;
 	status = "okay";
+
+	lvds-channel@0 {
+		fsl,data-mapping = "spwg";
+		fsl,data-width = <18>;
+		crtc = "ipu1-di0";
+		primary;
+		status = "okay";
+
+		display-timings {
+			native-mode = <&timing0>;
+			timing0: wxga {
+				clock-frequency = <60000000>;
+				hactive = <1280>;
+				vactive = <800>;
+				hback-porch = <40>;
+				hfront-porch = <40>;
+				vback-porch = <10>;
+				vfront-porch = <3>;
+				hsync-len = <80>;
+				vsync-len = <10>;
+			};
+		};
+	};
 };

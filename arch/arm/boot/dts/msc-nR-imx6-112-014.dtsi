@@ -23,7 +23,7 @@
 	};
 };
 
-&tps {
+&pmic {
 	regulators {
 		bpro {
 			regulator-name = "bpro";

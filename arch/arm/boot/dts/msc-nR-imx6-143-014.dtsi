@@ -18,7 +18,7 @@
 #include "msc-nR-imx6q.dtsi"
 
 
-&tps {
+&pmic {
 	regulators {
 		bpro {
 			regulator-name = "bpro";
