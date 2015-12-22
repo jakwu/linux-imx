@@ -164,11 +164,8 @@ static int reg_fixed_voltage_probe(struct platform_device *pdev)
 
 	drvdata->desc.fixed_uV = config->microvolts;
 
-	if (gpio_is_valid(config->gpio)) {
+	if (gpio_is_valid(config->gpio))
 		cfg.ena_gpio = config->gpio;
-		if (pdev->dev.of_node)
-			cfg.ena_gpio_initialized = true;
-	}
 	cfg.ena_gpio_invert = !config->enable_high;
 	if (config->enabled_at_boot) {
 		if (config->enable_high)

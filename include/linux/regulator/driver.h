@@ -296,7 +296,6 @@ struct regulator_config {
 	struct regmap *regmap;
 
 	int ena_gpio;
-	int ena_gpio_initialized;
 	unsigned int ena_gpio_invert:1;
 	unsigned int ena_gpio_flags;
 };
