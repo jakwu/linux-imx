@@ -29,7 +29,7 @@
 		late_init = <0>;
 		status = "disabled";
 	};
-	
+
 };
 
 &flexcan1 {

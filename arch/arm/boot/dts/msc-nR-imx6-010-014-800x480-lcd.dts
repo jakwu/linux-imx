@@ -65,7 +65,7 @@
 		int_clk = <0>;
 		late_init = <0>;
 		status = "okay";
-	};	
+	};
 
 	lcd@0 {
 		compatible = "fsl,lcd";
@@ -76,7 +76,7 @@
 		pinctrl-0 = <&pinctrl_ipu1>;
 		status = "okay";
 	};
-	
+
 	 soc {
                 aips-bus@02100000 { /* AIPS2 */
                         i2cmux {
@@ -91,6 +91,6 @@
                         };
                 };
         };
-	
+
 };
 

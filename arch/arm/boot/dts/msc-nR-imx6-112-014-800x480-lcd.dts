@@ -30,7 +30,7 @@
 		int_clk = <0>;
 		late_init = <0>;
 		status = "okay";
-	};	
+	};
 
 	lcd@0 {
 		compatible = "fsl,lcd";

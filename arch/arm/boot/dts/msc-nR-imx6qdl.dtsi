@@ -76,9 +76,9 @@
 						reg = <0x58>;
 						interrupt-parent = <&gpio7>;
 						interrupts = <12 8>;
-						
+
 						off-sequence = /bits/ 16 <
-							0x19  0xd4  0x0E  0x01 
+							0x19  0xd4  0x0E  0x01
 						>;
 
 						sleep-sequence = /bits/ 16 <
@@ -86,9 +86,9 @@
 							0x117 0xC0  0x0B  0x30
 							0x114 0x89  0x20  0x61
 							0x21  0x61
-						>; 
+						>;
 
-						wake-sequence = /bits/ 16 < 
+						wake-sequence = /bits/ 16 <
 							0x117 0xCC
 						>;
 
@@ -212,7 +212,7 @@
 							};
 						};
 					};
-					
+
 				};
 
 				i2c2@1 {
@@ -439,7 +439,7 @@
 				MX6QDL_PAD_GPIO_1__USB_OTG_ID      0x17059
 				MX6QDL_PAD_KEY_COL4__USB_OTG_OC    0x1b0b0
 			>;
-		};	
+		};
 
 		pinctrl_uart1: uart1grp {
 			fsl,pins = <
