@@ -751,6 +751,12 @@ config TOUCHSCREEN_MC13783
 	  To compile this driver as a module, choose M here: the
 	  module will be called mc13783_ts.
 
+
+config  TOUCHSCREEN_USB_GE_STAR
+        default y
+        bool "GE-STAR" if EXPERT
+        depends on TOUCHSCREEN_USB_COMPOSITE
+
 config TOUCHSCREEN_USB_EGALAX
 	default y
 	bool "eGalax, eTurboTouch CT-410/510/700 device support" if EXPERT

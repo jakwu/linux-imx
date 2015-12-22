@@ -50,6 +50,7 @@
 #include <linux/kernel.h>
 #include <linux/slab.h>
 #include <linux/input.h>
+#include <linux/input/mt.h>
 #include <linux/module.h>
 #include <linux/usb.h>
 #include <linux/usb/input.h>
@@ -142,7 +143,10 @@ enum {
 	DEVTYPE_NEXIO,
 	DEVTYPE_ELO,
 	DEVTYPE_ETOUCH,
+	DEVTYPE_GE_STAR,
 };
+
+static struct usbtouch_device_info usbtouch_dev_info[];
 
 #define USB_DEVICE_HID_CLASS(vend, prod) \
 	.match_flags = USB_DEVICE_ID_MATCH_INT_CLASS \
@@ -248,6 +252,8 @@ static const struct usb_device_id usbtouch_devices[] = {
 #ifdef CONFIG_TOUCHSCREEN_USB_EASYTOUCH
 	{USB_DEVICE(0x7374, 0x0001), .driver_info = DEVTYPE_ETOUCH},
 #endif
+
+	{USB_DEVICE(0x238f, 0x0001), .driver_info = DEVTYPE_GE_STAR},
 
 	{}
 };
@@ -1064,6 +1070,206 @@ static int elo_read_data(struct usbtouch_usb *dev, unsigned char *pkt)
 }
 #endif
 
+struct ge_star_priv {
+	struct usb_device	*usbdev;
+	struct urb		*util;
+	struct usb_ctrlrequest	uctrl;
+	uint16_t		status;
+	uint8_t			data[5];
+	struct completion	ucompl_done;
+};
+
+/*****************************************************************************
+ * Gleichmann Star Touch driver part
+ */
+
+#ifdef CONFIG_TOUCHSCREEN_USB_GE_STAR
+
+#define MAX_NUM_TOUCHES 16
+
+/* Callback function */
+static void ge_star_ctrl_callback(struct urb *urb)
+{
+}
+
+static ssize_t ge_star_status(struct device *dev,
+			      struct device_attribute *attr, char *buf)
+{
+	struct usb_interface *intf = to_usb_interface(dev);
+	struct usbtouch_usb *usbtouch = usb_get_intfdata(intf);
+	struct ge_star_priv *priv = usbtouch->priv;
+	unsigned int ctrl_pipe;
+
+	if (!intf || !usbtouch || !priv)
+		return -EIO;
+
+	priv->uctrl.bRequestType = 0x20;
+	priv->uctrl.bRequest = 0;
+	priv->uctrl.wValue = 0;
+	priv->uctrl.wIndex = 0;
+	priv->uctrl.wLength = 5;
+
+	priv->data[0] = 0x0a;
+	priv->data[1] = 0x03;
+	priv->data[2] = 0x52;
+	priv->data[3] = 0x07;
+	priv->data[4] = 0x01;
+
+	init_completion(&priv->ucompl_done);
+
+	ctrl_pipe = usb_sndctrlpipe(priv->usbdev, 0);
+
+	usb_fill_control_urb(priv->util, priv->usbdev, ctrl_pipe,
+			     (char *) &priv->uctrl, priv->data, 5,
+			     ge_star_ctrl_callback, NULL);
+
+	usb_submit_urb(priv->util, GFP_ATOMIC);
+
+	wait_for_completion(&priv->ucompl_done);
+
+	return scnprintf(buf, PAGE_SIZE, "%04X\n", priv->status);
+}
+
+static DEVICE_ATTR(touch_status, S_IRUGO, ge_star_status, NULL);
+
+static struct attribute *ge_star_attrs[] = {
+	&dev_attr_touch_status.attr,
+	NULL
+};
+
+static const struct attribute_group ge_star_attr_group = {
+	.attrs = ge_star_attrs,
+};
+
+static int ge_star_alloc(struct usbtouch_usb *usbtouch)
+{
+	struct ge_star_priv *priv;
+	int ret = -ENOMEM;
+
+	if (usbtouch->interface->cur_altsetting->desc.bInterfaceNumber == 0) {
+		usbtouch->priv = kmalloc(sizeof(struct ge_star_priv),
+					 GFP_KERNEL);
+		if (!usbtouch->priv)
+			goto out_buf;
+
+		priv = usbtouch->priv;
+		priv->status = 0xABCD; /* A init value no meaning */
+		priv->util = usb_alloc_urb(0, GFP_KERNEL);
+		if (!priv->util) {
+			dev_dbg(&usbtouch->interface->dev,
+				"%s - usb_alloc_urb failed: usbtouch->irq\n",
+				__func__);
+			goto out_free_buffers;
+		}
+	}
+	return 0;
+
+out_free_buffers:
+	kfree(priv);
+out_buf:
+	return ret;
+}
+
+static int ge_star_init(struct usbtouch_usb *usbtouch)
+{
+	struct device *dev = &usbtouch->interface->dev;
+	struct input_dev *input_dev = usbtouch->input;
+	struct ge_star_priv *priv;
+	int error;
+
+	if (usbtouch->interface->cur_altsetting->desc.bInterfaceNumber == 0) {
+		/* For multi touch */
+		error = input_mt_init_slots(input_dev, MAX_NUM_TOUCHES, 0);
+		if (error)
+			return -ENOMEM;
+
+		input_set_abs_params(input_dev, ABS_MT_POSITION_X,
+				     usbtouch_dev_info[DEVTYPE_GE_STAR].min_xc,
+				     usbtouch_dev_info[DEVTYPE_GE_STAR].max_xc,
+				     0, 0);
+		input_set_abs_params(input_dev, ABS_MT_POSITION_Y,
+				     usbtouch_dev_info[DEVTYPE_GE_STAR].min_yc,
+				     usbtouch_dev_info[DEVTYPE_GE_STAR].max_yc,
+				     0, 0);
+		priv = usbtouch->priv;
+		priv->usbdev = interface_to_usbdev(usbtouch->interface);
+
+		error = sysfs_create_group(&dev->kobj, &ge_star_attr_group);
+		if (error)
+			goto err_unregister_device;
+	}
+	return 0;
+
+err_unregister_device:
+	return error;
+}
+
+static void ge_star_exit(struct usbtouch_usb *usbtouch)
+{
+	struct device *dev = &usbtouch->interface->dev;
+	struct ge_star_priv *priv = usbtouch->priv;
+
+	if (usbtouch->interface->cur_altsetting->desc.bInterfaceNumber == 0) {
+		usb_kill_urb(priv->util);
+		usb_free_urb(priv->util);
+		kfree(priv);
+		sysfs_remove_group(&dev->kobj, &ge_star_attr_group);
+	}
+}
+
+static int ge_star_read_data(struct usbtouch_usb *usbtouch, unsigned char *pkt)
+{
+	struct ge_star_priv *priv = usbtouch->priv;
+
+	if (pkt[0] == 0x01) {
+		usbtouch->x = (pkt[4] << 8 | pkt[3]);
+		usbtouch->y = (pkt[6] << 8) | pkt[5];
+		usbtouch->touch = (pkt[1] & 0xF0) >> 4; /* Touch number */
+
+		switch (pkt[1] & 0x0F) {
+		case 0x07: /* Press detected */
+			usbtouch->press = 1;
+			break;
+
+		case 0x06: /* Release detected */
+			usbtouch->press = 0;
+			break;
+		}
+		return 1;
+	} else if ((pkt[0] == 0x06)) {
+		/* The status response is interpreted*/
+		if ((pkt[1] == 0x72) && (pkt[2] == 0x07) && (pkt[3] == 0x01)) {
+			priv->status = ((pkt[5] << 8)|pkt[4]);
+			complete(&priv->ucompl_done);
+		}
+		return 0;
+	}
+	return 0;
+}
+
+static void ge_star_process_pkt(struct usbtouch_usb *usbtouch,
+				unsigned char *pkt, int len)
+{
+	struct usbtouch_device_info *type = usbtouch->type;
+
+	if (!type->read_data(usbtouch, pkt))
+		return;
+
+	input_mt_slot(usbtouch->input, usbtouch->touch);
+	input_mt_report_slot_state(usbtouch->input, MT_TOOL_FINGER,
+				   usbtouch->press);
+
+	input_report_abs(usbtouch->input, ABS_MT_POSITION_X, usbtouch->x);
+	input_report_abs(usbtouch->input, ABS_MT_POSITION_Y, usbtouch->y);
+
+	input_report_abs(usbtouch->input, ABS_X, usbtouch->x);
+	input_report_abs(usbtouch->input, ABS_Y, usbtouch->y);
+
+	input_report_key(usbtouch->input, BTN_TOUCH, usbtouch->press);
+
+	input_sync(usbtouch->input);
+}
+#endif
 
 /*****************************************************************************
  * the different device descriptors
@@ -1283,6 +1489,22 @@ static struct usbtouch_device_info usbtouch_dev_info[] = {
 		.process_pkt	= usbtouch_process_multi,
 		.get_pkt_len	= etouch_get_pkt_len,
 		.read_data	= etouch_read_data,
+	},
+#endif
+
+#ifdef CONFIG_TOUCHSCREEN_USB_GE_STAR
+	[DEVTYPE_GE_STAR] = {
+		.min_xc		= 0x0,
+		.max_xc		= 0x0fff,
+		.min_yc		= 0x0,
+		.max_yc		= 0x0fff,
+		.max_press	= 0xff,
+		.rept_size	= 8,
+		.alloc		= ge_star_alloc,
+		.init		= ge_star_init,
+		.exit		= ge_star_exit,
+		.process_pkt	= ge_star_process_pkt,
+		.read_data	= ge_star_read_data,
 	},
 #endif
 };
