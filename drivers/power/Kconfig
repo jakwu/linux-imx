@@ -185,6 +185,13 @@ config BATTERY_DA9052
 	  Say Y here to enable support for batteries charger integrated into
 	  DA9052 PMIC.
 
+config BATTERY_DA9063
+	tristate "Dialog DA9063 Battery"
+	depends on MFD_DA9063
+	help
+	  Say Y here to enable support for batteries charger integrated into
+	  DA9063 PMIC.
+
 config BATTERY_MAX17040
 	tristate "Maxim MAX17040 Fuel Gauge"
 	depends on I2C

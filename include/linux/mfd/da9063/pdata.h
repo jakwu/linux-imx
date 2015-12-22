@@ -80,6 +80,13 @@ enum {
 #define DA9063_LED_HIGH_LEVEL_ACTIVE	0x0
 #define DA9063_LED_LOW_LEVEL_ACTIVE	0x4
 
+/*
+ * Bettery charger configuration
+ */
+struct da9063_battery_pdata {
+	int charging_uA;
+	int charging_mV;
+};
 
 /*
  * General PMIC configuration
@@ -107,6 +114,7 @@ struct da9063_pdata {
 	unsigned			flags;
 	struct da9063_regulators_pdata	*regulators_pdata;
 	struct led_platform_data	*leds_pdata;
+	struct da9063_battery_pdata *battery_pdata;
 };
 
 #endif	/* __MFD_DA9063_PDATA_H__ */
