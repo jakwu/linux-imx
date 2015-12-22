@@ -1,0 +1,60 @@
+/*
+ * Copyright (C) 2014 MSC Technologies, Design Center Aachen
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ */
+/dts-v1/;
+
+#include "msc-nR-imx6-143-014.dtsi"
+#include "msc-nR-imx6-mb2-maxtouch.dtsi"
+
+/ {
+	mxcfb1: fb@0 {
+		compatible = "fsl,mxc_sdc_fb";
+		disp_dev = "ldb";
+		interface_pix_fmt = "RGB666";
+		default_bpp = <32>;
+		int_clk = <0>;
+		late_init = <0>;
+		status = "okay";
+	};
+};
+
+&ldb {
+	status = "okay";
+
+	lvds-channel@0 {
+		fsl,data-mapping = "spwg";
+		fsl,data-width = <18>;
+		crtc = "ipu1-di0";
+		primary;
+		status = "okay";
+
+		display-timings {
+			native-mode = <&timing0>;
+			timing0: wxga {
+				clock-frequency = <60000000>;
+				hactive = <1280>;
+				vactive = <800>;
+				hback-porch = <40>;
+				hfront-porch = <40>;
+				vback-porch = <10>;
+				vfront-porch = <3>;
+				hsync-len = <80>;
+				vsync-len = <10>;
+			};
+		};
+	};
+};
