@@ -12,7 +12,7 @@
  *
  * Notes:
  *  The AIC3X is a driver for a low power stereo audio
- *  codecs aic31, aic32, aic33, aic3007.
+ *  codecs aic31, aic32, aic33, aic3007, aic3107.
  *
  *  It supports full aic33 codec functionality.
  *  The compatibility with aic32, aic31 and aic3007 is as follows:
@@ -85,6 +85,7 @@ struct aic3x_priv {
 #define AIC3X_MODEL_3X 0
 #define AIC3X_MODEL_33 1
 #define AIC3X_MODEL_3007 2
+#define AIC3X_MODEL_3107 3
 	u16 model;
 
 	/* Selects the micbias voltage */
@@ -850,6 +851,7 @@ static int aic3x_add_widgets(struct snd_soc_codec *codec)
 					ARRAY_SIZE(intercon_mono));
 		break;
 	case AIC3X_MODEL_3007:
+	case AIC3X_MODEL_3107:
 		snd_soc_dapm_new_controls(dapm, aic3007_dapm_widgets,
 			ARRAY_SIZE(aic3007_dapm_widgets));
 		snd_soc_dapm_add_routes(dapm, intercon_3007,
@@ -1329,6 +1331,7 @@ static int aic3x_init(struct snd_soc_codec *codec)
 		aic3x_mono_init(codec);
 		break;
 	case AIC3X_MODEL_3007:
+	case AIC3X_MODEL_3107:
 		snd_soc_write(codec, CLASSD_CTRL, 0);
 		break;
 	}
@@ -1394,6 +1397,7 @@ static int aic3x_probe(struct snd_soc_codec *codec)
 				ARRAY_SIZE(aic3x_mono_controls));
 		break;
 	case AIC3X_MODEL_3007:
+	case AIC3X_MODEL_3107:
 		snd_soc_add_codec_controls(codec,
 				&aic3x_classd_amp_gain_ctrl, 1);
 		break;
@@ -1468,11 +1472,12 @@ static const struct i2c_device_id aic3x_i2c_id[] = {
 	{ "tlv320aic33", AIC3X_MODEL_33 },
 	{ "tlv320aic3007", AIC3X_MODEL_3007 },
 	{ "tlv320aic3106", AIC3X_MODEL_3X },
+	{ "tlv320aic3107", AIC3X_MODEL_3107 },
 	{ }
 };
 MODULE_DEVICE_TABLE(i2c, aic3x_i2c_id);
 
-static const struct reg_default aic3007_class_d[] = {
+static const struct reg_default aic3x07_class_d[] = {
 	/* Class-D speaker driver init; datasheet p. 46 */
 	{ AIC3X_PAGE_SELECT, 0x0D },
 	{ 0xD, 0x0D },
@@ -1578,9 +1583,9 @@ static int aic3x_i2c_probe(struct i2c_client *i2c,
 		goto err_gpio;
 	}
 
-	if (aic3x->model == AIC3X_MODEL_3007) {
-		ret = regmap_register_patch(aic3x->regmap, aic3007_class_d,
-					    ARRAY_SIZE(aic3007_class_d));
+	if (aic3x->model == AIC3X_MODEL_3007 || aic3x->model == AIC3X_MODEL_3107) {
+		ret = regmap_register_patch(aic3x->regmap, aic3x07_class_d,
+					    ARRAY_SIZE(aic3x07_class_d));
 		if (ret != 0)
 			dev_err(&i2c->dev, "Failed to init class D: %d\n",
 				ret);
@@ -1617,6 +1622,7 @@ static const struct of_device_id tlv320aic3x_of_match[] = {
 	{ .compatible = "ti,tlv320aic33" },
 	{ .compatible = "ti,tlv320aic3007" },
 	{ .compatible = "ti,tlv320aic3106" },
+	{ .compatible = "ti,tlv320aic3107", },
 	{},
 };
 MODULE_DEVICE_TABLE(of, tlv320aic3x_of_match);
