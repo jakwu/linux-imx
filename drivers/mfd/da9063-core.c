@@ -183,6 +183,95 @@ void da9063_device_exit(struct da9063 *da9063)
 	da9063_irq_exit(da9063);
 }
 
+struct da9063_reg_record {
+	u16 offs;
+	u16 value;
+};
+
+int da9063_device_shutdown(struct da9063 *da9063)
+{
+	int ret = 0;
+	u8 idx, cnt;
+	struct da9063_reg_record *rec;
+	int offs, value;
+
+	if (!da9063->off_seq.size)
+		return 0;
+
+	cnt = da9063->off_seq.size / sizeof(struct da9063_reg_record);
+	rec = da9063->off_seq.seq;
+
+	for (idx=0; idx<cnt; idx++, rec++) {
+
+		offs = be16_to_cpu(rec->offs);
+		value = be16_to_cpu(rec->value);
+
+		ret = regmap_write(da9063->regmap, offs, value);
+		if (ret < 0) {
+			dev_err(da9063->dev, "Cannot set register 0x%04x to 0x%04x.\n",
+					offs, value);
+			return -EIO;
+		}
+	}
+	return ret;
+}
+
+int da9063_device_suspend(struct da9063 *da9063, pm_message_t mesg)
+{
+	int ret = 0;
+	u8 idx, cnt;
+	struct da9063_reg_record *rec;
+	int offs, value;
+
+	if (!da9063->sleep_seq.size)
+		return 0;
+
+	cnt = da9063->sleep_seq.size / sizeof(struct da9063_reg_record);
+	rec = da9063->sleep_seq.seq;
+
+	for (idx=0; idx<cnt; idx++, rec++) {
+
+		offs = be16_to_cpu(rec->offs);
+		value = be16_to_cpu(rec->value);
+
+		ret = regmap_write(da9063->regmap, offs, value);
+		if (ret < 0) {
+			dev_err(da9063->dev, "Cannot set register 0x%04x to 0x%04x.\n",
+					offs, value);
+			return -EIO;
+		}
+	}
+	return ret;
+}
+
+int da9063_device_resume(struct da9063 *da9063)
+{
+	int ret = 0;
+	u8 idx, cnt;
+	struct da9063_reg_record *rec;
+	int offs, value;
+
+	if (!da9063->wake_seq.size)
+		return 0;
+
+	cnt = da9063->wake_seq.size / sizeof(struct da9063_reg_record);
+	rec = da9063->wake_seq.seq;
+
+	for (idx=0; idx<cnt; idx++, rec++) {
+
+		offs = be16_to_cpu(rec->offs);
+		value = be16_to_cpu(rec->value);
+
+		ret = regmap_write(da9063->regmap, offs, value);
+		if (ret < 0) {
+			dev_err(da9063->dev, "Cannot set register 0x%04x to 0x%04x.\n",
+					offs, value);
+			return -EIO;
+		}
+	}
+	return ret;
+}
+
 MODULE_DESCRIPTION("PMIC driver for Dialog DA9063");
 MODULE_AUTHOR("Krystian Garbaciak <krystian.garbaciak@diasemi.com>, Michal Hajduk <michal.hajduk@diasemi.com>");
 MODULE_LICENSE("GPL");

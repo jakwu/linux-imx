@@ -203,6 +203,61 @@ static struct regmap_config da9063_regmap_config = {
 	.cache_type = REGCACHE_RBTREE,
 };
 
+#if defined(CONFIG_OF)
+static int da9063_i2c_parse_dt(struct i2c_client *client, struct da9063 *da9063)
+{
+	struct device_node *np = client->dev.of_node;
+	const void *prop;
+	int sz;
+
+	prop = of_get_property(np, "off-sequence", &sz);
+	if (prop) {
+		da9063->off_seq.seq = kzalloc(sz, GFP_KERNEL);
+		if (!da9063->off_seq.seq)
+			return -ENOMEM;
+
+		memcpy(da9063->off_seq.seq, prop, sz);
+		da9063->off_seq.size = sz;
+	}
+	else {
+		da9063->off_seq.size = 0;
+	}
+
+	prop = of_get_property(np, "sleep-sequence", &sz);
+	if (prop) {
+		da9063->sleep_seq.seq = kzalloc(sz, GFP_KERNEL);
+		if (!da9063->sleep_seq.seq)
+			return -ENOMEM;
+
+		memcpy(da9063->sleep_seq.seq, prop, sz);
+		da9063->sleep_seq.size = sz;
+	}
+	else {
+		da9063->sleep_seq.size = 0;
+	}
+
+	prop = of_get_property(np, "wake-sequence", &sz);
+	if (prop) {
+		da9063->wake_seq.seq = kzalloc(sz, GFP_KERNEL);
+		if (!da9063->wake_seq.seq)
+			return -ENOMEM;
+
+		memcpy(da9063->wake_seq.seq, prop, sz);
+		da9063->wake_seq.size = sz;
+	}
+	else {
+		da9063->wake_seq.size = 0;
+	}
+
+	return 0;
+}
+#else /* defined(CONFIG_OF) */
+static int da9063_i2c_parse_dt(struct i2c_client *client, struct da9063 *da9063)
+{
+	return 0;
+}
+#endif /* defined(CONFIG_OF) */
+
 static int da9063_i2c_probe(struct i2c_client *i2c,
 	const struct i2c_device_id *id)
 {
@@ -247,6 +302,27 @@ static int da9063_i2c_remove(struct i2c_client *i2c)
 	return 0;
 }
 
+static void da9063_i2c_shutdown(struct i2c_client *i2c)
+{
+	struct da9063 *da9063 = i2c_get_clientdata(i2c);
+
+	da9063_device_shutdown(da9063);
+}
+
+static int da9063_i2c_suspend(struct i2c_client *i2c, pm_message_t mesg)
+{
+	struct da9063 *da9063 = i2c_get_clientdata(i2c);
+
+	return da9063_device_suspend(da9063, mesg);
+}
+
+static int da9063_i2c_resume(struct i2c_client *i2c)
+{
+	struct da9063 *da9063 = i2c_get_clientdata(i2c);
+
+	return da9063_device_resume(da9063);
+}
+
 static const struct i2c_device_id da9063_i2c_id[] = {
 	{"da9063", PMIC_DA9063},
 	{},
@@ -260,6 +336,9 @@ static struct i2c_driver da9063_i2c_driver = {
 	},
 	.probe    = da9063_i2c_probe,
 	.remove   = da9063_i2c_remove,
+	.shutdown = da9063_i2c_shutdown,
+	.suspend  = da9063_i2c_suspend,
+	.resume   = da9063_i2c_resume,
 	.id_table = da9063_i2c_id,
 };
 

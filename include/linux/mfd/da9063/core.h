@@ -73,6 +73,11 @@ enum da9063_irqs {
 #define DA9063_IRQ_BASE_OFFSET	0
 #define DA9063_NUM_IRQ		(DA9063_IRQ_GPI15 + 1 - DA9063_IRQ_BASE_OFFSET)
 
+struct da9063_pm_sequence {
+	void *seq;
+	int size;
+};
+
 struct da9063 {
 	/* Device */
 	struct device	*dev;
@@ -87,6 +92,10 @@ struct da9063 {
 	int		chip_irq;
 	unsigned int	irq_base;
 	struct regmap_irq_chip_data *regmap_irq;
+
+	struct da9063_pm_sequence off_seq;
+	struct da9063_pm_sequence sleep_seq;
+	struct da9063_pm_sequence wake_seq;
 };
 
 int da9063_device_init(struct da9063 *da9063, unsigned int irq);
@@ -94,5 +103,8 @@ int da9063_irq_init(struct da9063 *da9063);
 
 void da9063_device_exit(struct da9063 *da9063);
 void da9063_irq_exit(struct da9063 *da9063);
+int da9063_device_shutdown(struct da9063 *da9063);
+int da9063_device_suspend(struct da9063 *da9063, pm_message_t mesg);
+int da9063_device_resume(struct da9063 *da9063);
 
 #endif /* __MFD_DA9063_CORE_H__ */
